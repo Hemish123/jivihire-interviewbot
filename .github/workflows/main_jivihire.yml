@@ -31,6 +31,26 @@ jobs:
       
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+        # Step 4: Download ZIP file from Azure Blob Storage
+      - name: Download ZIP from Azure Blob Storage
+        run: |
+         curl -L -o model-best.zip "https://parsingmodel.blob.core.windows.net/model-best/model-best.zip?${{ secrets.AZURE_SAS_TOKEN }}"
+
+        # Step 5: Extract the ZIP file
+      - name: Extract ZIP file
+        run: |
+           unzip model-best.zip -d ./model-best
+#      - name: Run collectstatic
+#        run: python manage.py collectstatic --noinput
+        env:
+          SECRET: ${{ secrets.SECRET }}
+          AZURE_POSTGRESQL_CONNECTIONSTRING: ${{ secrets.AZURE_POSTGRESQL_CONNECTIONSTRING }}
+          CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          AZURE_ACCOUNT_NAME: ${{ secrets.AZURE_ACCOUNT_NAME }}
+          AZURE_ACCOUNT_KEY: ${{ secrets.AZURE_ACCOUNT_KEY}}
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
