@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interview</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body style="background-color: #f8f9fa;">
+  <div class="container py-5">
+    <div class="row justify-content-center g-5">
+      
+      <!-- 🎥 Video Preview Area -->
+      <div class="col-md-6 text-center">
+        <h5 class="mb-3">Live Video Preview</h5>
+        <div class="border rounded shadow-sm p-2 bg-dark">
+          <video id="videoPreview"
+                 autoplay muted
+                 style="width: 100%; height: 400px; object-fit: cover; border-radius: 6px;">
+          </video>
+        </div>
+      </div>
+
+      <!-- ❓ Interview Question and Answer -->
+      <div class="col-md-6 align-items-center">
+        <h2 class="mb-3">Interview Question</h2>
+        <p id="question" class="fs-5 fw-semibold text-primary">Loading question...</p>
+        <p id="timer" class="text-danger fs-4 fw-bold">03:00</p>
+
+
+        <!-- Hidden input to store the transcript -->
+        <input type="hidden" id="answerInput">
+
+        <button id="nextButton" class="btn btn-success mb-3" onclick="submitAndNext()">Next ➡️</button>
+
+        <p id="result" class="fs-5 fw-bold"></p>
+        <p id="error" class="text-danger fw-bold"></p>
+        <div id="loadingNext" class="d-none mt-3 text-center">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2">Loading next question...</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧠 JavaScript for Recording & Question Handling -->
+  <script>
+  let recognition = null;
+  let recorder = null;
+  let videoStream = null;
+  let recordedChunks = [];
+  let timerInterval = null;
+  let timeLeft = 180; // 3 minutes
+  let speechTranscript = ''; // Store the transcript here
+
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    timeLeft = 180;
+    updateTimerDisplay();
+
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        autoSubmitAndNext();
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const seconds = (timeLeft % 60).toString().padStart(2, '0');
+    document.getElementById('timer').innerText = `${minutes}:${seconds}`;
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  function loadQuestion() {
+    fetch('/interviewbot/get-question/')
+      .then(res => res.json())
+      .then(data => {
+        if (data.done) {
+          document.getElementById('question').innerText = "🎉 Interview Complete!";
+          document.getElementById('nextButton').style.display = "none";
+          stopInterview();
+          clearInterval(timerInterval);
+
+          const tryAgainBtn = document.createElement("button");
+          tryAgainBtn.innerText = "🔁 Try Again";
+          tryAgainBtn.className = "btn btn-warning";
+          tryAgainBtn.onclick = restartInterview;
+          tryAgainBtn.id = "tryAgainButton";
+          document.querySelector('.col-md-6.align-items-center').appendChild(tryAgainBtn);
+          return;
+        }
+
+        document.getElementById('question').innerText = data.question;
+        document.getElementById('answerInput').value = '';
+        speechTranscript = ''; // Reset the transcript for new question
+        document.getElementById('result').innerText = '';
+        document.getElementById('error').innerText = '';
+        recordedChunks = [];
+
+        startTimer();
+        startInterview();
+      });
+  }
+
+  function startInterview() {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      
+      recognition.onresult = event => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        // Store the final transcript
+        speechTranscript += finalTranscript;
+        document.getElementById('answerInput').value = speechTranscript;
+      };
+
+      recognition.onerror = event => {
+        document.getElementById('error').innerText = "Microphone error: " + event.error;
+      };
+      
+      recognition.onend = () => {
+        // Automatically restart recognition if it stops unexpectedly
+        if (timeLeft > 0) {
+          recognition.start();
+        }
+      };
+      
+      recognition.start();
+    } else {
+      document.getElementById('error').innerText = "Speech Recognition not supported.";
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        videoStream = stream;
+        document.getElementById('videoPreview').srcObject = stream;
+        recorder = new MediaRecorder(stream);
+        recorder.ondataavailable = e => recordedChunks.push(e.data);
+        recorder.start();
+      })
+      .catch(err => {
+        document.getElementById('error').innerText = "Camera/Mic error: " + err;
+      });
+  }
+
+  function stopInterview(submitAfterStop = false) {
+  if (recognition) {
+    recognition.onend = () => {
+      const answer = document.getElementById('answerInput').value.trim();
+      if (!answer && submitAfterStop !== "auto") {
+        document.getElementById('error').innerText = "❌ No voice input detected.";
+        return;
+      }
+      submitAnswer(answer, submitAfterStop === "auto");
+    };
+    recognition.stop();
+  } else {
+    const answer = document.getElementById('answerInput').value.trim();
+    if (!answer && submitAfterStop !== "auto") {
+      document.getElementById('error').innerText = "❌ No voice input detected.";
+      return;
+    }
+    submitAnswer(answer, submitAfterStop === "auto");
+  }
+
+  if (recorder && recorder.state !== "inactive") recorder.stop();
+  if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+}
+
+
+
+  function submitAndNext() {
+  clearInterval(timerInterval);
+  stopInterview(true); // pass true to indicate we want to submit after stopping
+}
+
+
+  function autoSubmitAndNext() {
+  clearInterval(timerInterval);
+  stopInterview("auto");
+}
+
+
+  function submitAnswer(answer, isAuto = false) {
+    // Check if recorder exists and is recording
+    if (recorder && recorder.state === "recording") {
+      recorder.onstop = () => {
+        sendAnswer(answer, isAuto);
+      };
+      recorder.stop();
+    } else {
+      // No recorder or already stopped
+      sendAnswer(answer, isAuto);
+    }
+  }
+
+  function sendAnswer(answer, isAuto) {
+    const videoBlob = new Blob(recordedChunks, { type: "video/webm" });
+    const formData = new FormData();
+    formData.append('answer', answer);
+    formData.append('video', videoBlob, 'interview.webm');
+
+    // Show the spinner
+    document.getElementById('loadingNext').classList.remove('d-none');
+
+
+    fetch('/interviewbot/submit-answer/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('result').innerText = isAuto ? "⏳ Time's up! Auto-submitted." : "";
+      setTimeout(() => {
+        loadQuestion();
+        document.getElementById('loadingNext').classList.add('d-none');
+      }, 1000);
+    });
+  }
+
+  function restartInterview() {
+    fetch('/interviewbot/reset/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    }).then(() => {
+      
+      document.getElementById('nextButton').style.display = "inline";
+      document.getElementById('tryAgainButton')?.remove();
+      loadQuestion();
+    });
+  }
+
+  // Initial start
+  loadQuestion();
+</script>
+
+</body>
+</html>

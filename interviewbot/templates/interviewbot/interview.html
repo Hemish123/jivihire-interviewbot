@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Interview</title>
+  
+  <!-- ✅ Bootstrap CSS for styling -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <style>
+    #error {
+      color: red;
+      min-height: 20px;
+      margin: 10px 0;
+    }
+    #answerInput {
+      display: none; /* Hidden textarea for transcript storage */
+    }
+    #micStatus {
+      min-height: 32px;
+    }
+    #volumeBar {
+      transition: width 0.1s linear, background-color 0.1s linear;
+    }
+  </style>
+</head>
+
+<body style="background-color: #f8f9fa;">
+  <div class="container py-5">
+    <div class="row justify-content-center g-5">
+      
+      <!-- ✅ Left Section: Video Preview -->
+      <div class="col-md-6 text-center">
+        <h5 class="mb-3">Live Video Preview</h5>
+        <div class="border rounded shadow-sm p-2 bg-dark">
+          <!-- ✅ Video element to show camera feed -->
+          <video id="videoPreview" autoplay muted style="width: 100%; height: 400px; object-fit: cover; border-radius: 6px;"></video>
+        </div>
+      </div>
+
+      <!-- ✅ Right Section: Interview Question & Controls -->
+      <div class="col-md-6 align-items-center">
+        <h2 class="mb-3">Interview Question</h2>
+        <!-- ✅ Dynamic question text -->
+        <p id="question" class="fs-5 fw-semibold text-primary">Loading question...</p>
+
+        <!-- ✅ Countdown timer -->
+        <p id="timer" class="text-danger fs-4 fw-bold">03:00</p>
+
+        <!-- ✅ Mic status & volume visualization -->
+        <div id="micStatus" class="d-flex align-items-center mb-3">
+          <span id="micBadge" class="badge bg-secondary">Mic Off</span>
+          <div class="flex-grow-1 ms-3">
+            <div class="progress" style="height:8px;">
+              <div id="volumeBar" class="progress-bar bg-secondary" style="width:0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ✅ Hidden textarea to store transcribed text -->
+        <textarea id="answerInput"></textarea>
+
+        <!-- ✅ Next button -->
+        <button id="nextButton" class="btn btn-success mb-3" onclick="submitAndNext()">Next ➡️</button>
+
+        <!-- ✅ Status and error messages -->
+        <p id="result" class="fs-5 fw-bold"></p>
+        <p id="error" class="text-danger fw-bold"></p>
+
+        <!-- ✅ Loading spinner for next question -->
+        <div id="loadingNext" class="d-none mt-3 text-center">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2">Loading next question...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ JavaScript Logic for Interview -->
+  <script>
+let recognition = null; // For speech recognition
+let recorder = null; // For video recording
+let videoStream = null; // Video stream from camera
+let audioRecorder = null; // Audio recording
+let recordedChunks = []; // Video chunks storage
+let audioChunks = []; // Audio chunks storage
+let timerInterval = null;
+let timeLeft = 180; // Interview time per question (3 minutes)
+let speechTranscript = ''; // Speech-to-text transcript
+
+const micBadge = document.getElementById('micBadge');
+const volumeBar = document.getElementById('volumeBar');
+
+/** ✅ Start the question timer */
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 180;
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      autoSubmitAndNext(); // Auto submit when time ends
+    }
+  }, 1000);
+}
+
+/** ✅ Update the countdown display */
+function updateTimerDisplay() {
+  const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+  const seconds = (timeLeft % 60).toString().padStart(2, '0');
+  document.getElementById('timer').innerText = `${minutes}:${seconds}`;
+}
+
+/** ✅ Get CSRF token from cookies */
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+/** ✅ Show countdown overlay before recording starts */
+function showCountdown(seconds, onComplete) {
+  const videoContainer = document.querySelector(".border.rounded");
+  const overlay = document.createElement("div");
+  overlay.style.position = "absolute";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.backgroundColor = "rgba(0,0,0,0.6)";
+  overlay.style.fontSize = "72px";
+  overlay.style.color = "#fff";
+  overlay.style.fontWeight = "bold";
+  overlay.style.zIndex = "10";
+  overlay.id = "countdownOverlay";
+  videoContainer.style.position = "relative";
+  videoContainer.appendChild(overlay);
+
+  let current = seconds;
+  overlay.innerText = current;
+
+  const interval = setInterval(() => {
+    current--;
+    if (current <= 0) {
+      clearInterval(interval);
+      overlay.remove();
+      if (onComplete) onComplete();
+    } else {
+      overlay.innerText = current;
+    }
+  }, 1000);
+}
+
+/** ✅ Load next question from server */
+function loadQuestion() {
+  fetch('/interviewbot/get-question/')
+    .then(res => res.json())
+    .then(data => {
+      if (data.done) {
+        // ✅ Interview completed
+        document.getElementById('question').innerText = "🎉 Interview Complete!";
+        document.getElementById('nextButton').style.display = "none";
+        stopInterview();
+        clearInterval(timerInterval);
+
+        // ✅ Show restart button
+        const tryAgainBtn = document.createElement("button");
+        tryAgainBtn.innerText = "🔁 Try Again";
+        tryAgainBtn.className = "btn btn-warning";
+        tryAgainBtn.onclick = restartInterview;
+        tryAgainBtn.id = "tryAgainButton";
+        document.querySelector('.col-md-6.align-items-center').appendChild(tryAgainBtn);
+        return;
+      }
+
+      // ✅ Display question and reset states
+      document.getElementById('question').innerText = data.question;
+      document.getElementById('answerInput').value = '';
+      speechTranscript = '';
+      document.getElementById('result').innerText = '';
+      document.getElementById('error').innerText = '';
+      recordedChunks = [];
+      audioChunks = [];
+
+      // ✅ Start timer and countdown animation
+      startTimer();
+      showCountdown(3, () => startInterview());
+    });
+}
+
+/** ✅ Start recording video, audio, and speech recognition */
+function startInterview() {
+  document.getElementById('error').innerText = '';
+
+  // ✅ Audio recording + volume visualization
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(audioStream => {
+      micBadge.className = 'badge bg-success';
+      micBadge.innerText = 'Mic On';
+
+      // ✅ Audio visualization setup
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(audioStream);
+      const dataArray = new Uint8Array(analyser.fftSize);
+      microphone.connect(analyser);
+
+      function updateVolume() {
+        analyser.getByteTimeDomainData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const val = (dataArray[i] - 128) / 128;
+          sum += val * val;
+        }
+        const volume = Math.sqrt(sum / dataArray.length);
+        const percent = Math.min(100, Math.max(0, volume * 300));
+
+        volumeBar.style.width = percent + "%";
+        if (percent < 30) {
+          volumeBar.className = 'progress-bar bg-success';
+        } else if (percent < 60) {
+          volumeBar.className = 'progress-bar bg-warning';
+        } else {
+          volumeBar.className = 'progress-bar bg-danger';
+        }
+
+        if (audioStream.active) requestAnimationFrame(updateVolume);
+      }
+      updateVolume();
+
+      // ✅ Start audio recording
+      audioRecorder = new MediaRecorder(audioStream, { mimeType: "audio/webm" });
+      audioChunks = [];
+      audioRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      audioRecorder.start();
+    })
+    .catch(err => {
+      micBadge.className = 'badge bg-danger';
+      micBadge.innerText = 'Mic Error';
+      document.getElementById('error').innerText = "Audio error: " + err;
+    });
+
+  // ✅ Start speech recognition if supported
+  if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => { micBadge.className = 'badge bg-success'; micBadge.innerText = 'Mic On'; };
+    recognition.onerror = e => { micBadge.className = 'badge bg-danger'; micBadge.innerText = 'Mic Error'; };
+    recognition.onend = () => { if (timeLeft > 0) recognition.start(); };
+
+    recognition.onresult = e => {
+      let interim = '';
+      let final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += t + ' ';
+        else interim += t;
+      }
+      speechTranscript += final;
+      document.getElementById('answerInput').value = speechTranscript + interim;
+    };
+    recognition.start();
+  }
+
+  // ✅ Start video recording
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      videoStream = stream;
+      document.getElementById('videoPreview').srcObject = stream;
+      recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      recordedChunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      recorder.start();
+    })
+    .catch(err => { document.getElementById('error').innerText = "Camera error: " + err; });
+}
+
+/** ✅ Stop all recording (audio, video, speech) */
+function stopInterview() {
+  if (recognition) recognition.stop();
+  if (recorder && recorder.state !== "inactive") recorder.stop();
+  if (audioRecorder && audioRecorder.state !== "inactive") audioRecorder.stop();
+  if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+  micBadge.className = 'badge bg-secondary';
+  micBadge.innerText = 'Mic Off';
+  volumeBar.style.width = "0%";
+  volumeBar.className = 'progress-bar bg-secondary';
+}
+
+/** ✅ Submit answer and load next question */
+function submitAndNext() {
+  const speechAnswer = document.getElementById('answerInput').value.trim();
+  const voiceAnswer = speechTranscript.trim();
+  const answer = speechAnswer || voiceAnswer;
+
+  if (!answer) {
+    document.getElementById('error').innerText = "❌ Please provide an answer before proceeding.";
+    return;
+  }
+
+  clearInterval(timerInterval);
+  document.getElementById('loadingNext').classList.remove('d-none');
+  document.getElementById('nextButton').disabled = true;
+
+  const stopPromises = [];
+  if (recorder && recorder.state === "recording") stopPromises.push(new Promise(resolve => { recorder.onstop = resolve; recorder.stop(); }));
+  if (audioRecorder && audioRecorder.state === "recording") stopPromises.push(new Promise(resolve => { audioRecorder.onstop = resolve; audioRecorder.stop(); }));
+
+  Promise.all(stopPromises).then(() => { stopInterview(); submitAnswer(answer, false); });
+}
+
+/** ✅ Auto submit when time ends */
+function autoSubmitAndNext() {
+  const answer = document.getElementById('answerInput').value.trim();
+  clearInterval(timerInterval);
+  stopInterview();
+  submitAnswer(answer, true);
+}
+
+/** ✅ Send answer, video, and audio to backend */
+function submitAnswer(answer, isAuto) {
+  const formData = new FormData();
+  formData.append('answer', answer);
+  formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+  if (recordedChunks.length > 0) {
+    const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+    formData.append('video', videoBlob, 'interview.webm');
+  }
+
+  if (audioChunks.length > 0) {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    formData.append('audio', audioBlob, 'audio.webm');
+  }
+
+  fetch('/interviewbot/submit-answer/', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') },
+    body: formData,
+    credentials: 'include'
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.done) {
+      document.getElementById('question').innerText = "🎉 Interview Complete!";
+      document.getElementById('nextButton').style.display = "none";
+      stopInterview();
+      clearInterval(timerInterval);
+    } else {
+      loadQuestion();
+    }
+  })
+  .catch(error => {
+    document.getElementById('error').innerText = "Error submitting answer: " + error.message;
+  })
+  .finally(() => {
+    document.getElementById('loadingNext').classList.add('d-none');
+    document.getElementById('nextButton').disabled = false;
+  });
+}
+
+/** ✅ Restart interview by resetting session */
+function restartInterview() {
+  fetch('/interviewbot/reset/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  }).then(() => {
+    document.getElementById('nextButton').style.display = "inline";
+    document.getElementById('tryAgainButton')?.remove();
+    loadQuestion();
+  });
+}
+
+/** ✅ Load the first question when page loads */
+loadQuestion();
+</script>
+</body>
+</html>

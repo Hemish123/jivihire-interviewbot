@@ -1,0 +1,231 @@
+{% extends "screening/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl py-4">
+  <!-- Header Buttons -->
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 mx-3">
+    <button onclick="window.history.back()" class="btn btn-outline-primary">
+      <i class="ti ti-chevron-left me-2"></i> Back
+    </button>
+    
+  </div>
+
+  <!-- Main Card Container -->
+  <div id="reportContent" class="card shadow-sm border-0">
+    
+    <div class="card-header bg-white d-flex justify-content-between">
+      
+      <div>
+        <h5 class="mb-0">Interview Report for {{ candidate.name }}</h5>
+        <small class="text-muted">Detailed performance and AI assessment</small>
+      </div>
+      <button id="exportBtn" class="btn btn-outline-primary d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 mx-3">
+      <i class="ti ti-file-export me-2"></i> Export Report
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="row g-4">
+        <!-- Candidate Overview -->
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+              <img src="{% static 'dashboard/img/pages/mascot-2.png' %}"
+                   alt="Candidate Photo"
+                   class="rounded-circle mb-3"
+                   style="width:300px; height:300px; object-fit:cover;">
+              <h4 class="fw-bold">{{ candidate.name }}</h4>
+              {% if candidate.current_designation %}
+              <p class="text-muted">{{ candidate.current_designation }}</p>
+              {% endif %}
+              <div class="my-3">
+                <span class="badge bg-success fs-6">Experience: {{ candidate.experience }} yrs</span>
+              </div>
+              <div class="mb-2">
+                <i class="fas fa-graduation-cap text-primary me-1"></i>{{ candidate.education }}
+              </div>
+              <hr>
+              <div class="mb-2">
+                <strong>Avg Question Score:</strong>
+                <div class="progress"><div class="progress-bar bg-primary" style="width:{{ average_question_score }}%"></div></div>
+                <small>{{ average_question_score }}%</small>
+              </div>
+              <div class="mb-2">
+                <strong>Avg Technical Skill:</strong>
+                <div class="progress"><div class="progress-bar bg-success" style="width:{{ average_technical_score }}%"></div></div>
+                <small>{{ average_technical_score }}%</small>
+              </div>
+              <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3">
+                <i class="fas fa-chart-pie text-info me-2"></i>Skill Averages
+              </h6>
+              {{ skill_labels|json_script:"skill-labels" }}
+              {{ skill_values|json_script:"skill-values" }}
+              <canvas id="skillsChart" style="max-height:300px;"></canvas>
+            </div>
+          </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary and Chart -->
+        <div class="col-md-8">
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+              <h5 class="fw-bold text-primary">
+                <i class="fas fa-sparkles me-2"></i>AI Interview Summary
+              </h5>
+              <ul>
+                {% for line in summary_text.splitlines %} 
+                  {% if line.strip %}<li>{{ line|safe }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+
+            </div>
+          </div>
+
+          
+
+          <!-- Question Details -->
+          <div class="row g-3">
+            {% for q in questions %}
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                  <h6 class="fw-bold text-dark mb-2">
+                    <i class="fas fa-question-circle text-primary me-1"></i>{{ q.question }}
+                  </h6>
+                  <p class="text-muted">
+                    <i class="fas fa-reply me-1"></i>{{ q.answer }}
+                  </p>
+                  <div class="mb-2">
+                    <small class="fw-semibold text-dark">Score:</small>
+                    <span class="badge bg-primary">{{ q.score }}%</span>
+                    <div class="progress mt-1" style="height:6px;">
+                      <div class="progress-bar bg-primary" style="width:{{ q.score }}%"></div>
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <small class="fw-semibold text-dark">Technical Skills:</small>
+                    <span class="badge bg-success">{{ q.technical_skills_score }}%</span>
+                    <div class="progress mt-1" style="height:6px;">
+                      <div class="progress-bar bg-success" style="width:{{ q.technical_skills_score }}%"></div>
+                    </div>
+                  </div>
+                  {% if q.skills %}
+                  <div class="mt-3">
+                    <small class="fw-semibold text-dark">Skill Breakdown:</small>
+                    <ul class="list-inline mt-2">
+                      {% for skill, val in q.skills.items %}
+                      <li class="list-inline-item mb-1">
+                        <span class="badge rounded-pill bg-info">{{ skill }}: {{ val }}%</span>
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+  // Render Chart.js
+  const skillLabels = JSON.parse(document.getElementById('skill-labels').textContent);
+  const skillData = JSON.parse(document.getElementById('skill-values').textContent);
+  const ctx = document.getElementById('skillsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: skillLabels,
+      datasets: [{
+        label: 'Skill Score (%)',
+        data: skillData,
+        backgroundColor: [
+          '#0d6efd',
+          '#198754',
+          '#ffc107',
+          '#dc3545',
+          '#6f42c1',
+          '#20c997'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+
+  const exportBtn = document.getElementById("exportBtn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", async function() {
+      // 1️⃣ Clone the main report element
+      const reportElement = document.querySelector('.card.shadow-sm.border-0');
+      const clone = reportElement.cloneNode(true);
+
+      // 2️⃣ Remove Export button from the clone
+      const clonedExportBtn = clone.querySelector("#exportBtn");
+      if (clonedExportBtn) clonedExportBtn.remove();
+
+      // 3️⃣ Force candidate image centering in the clone
+      const clonedImage = clone.querySelector("img");
+      if (clonedImage) {
+        clonedImage.style.display = "block";
+        clonedImage.style.margin = "0 auto";
+        clonedImage.style.float = "none";
+      }
+
+      // 4️⃣ Replace the chart canvas in the clone with an image
+      const originalCanvas = document.getElementById('skillsChart');
+      const clonedCanvas = clone.querySelector('#skillsChart');
+      if (clonedCanvas) {
+        const chartImage = document.createElement('img');
+        chartImage.src = originalCanvas.toDataURL('image/png');
+        chartImage.style.width = '100%';
+        chartImage.style.display = 'block';
+        clonedCanvas.parentNode.replaceChild(chartImage, clonedCanvas);
+      }
+
+      // 5️⃣ Create a hidden container to hold the clone
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.top = '-9999px';
+      container.style.left = '-9999px';
+      container.appendChild(clone);
+      document.body.appendChild(container);
+
+      // 6️⃣ Generate the PDF
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: '{{ candidate.name|slugify }}_interview_report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+      };
+      await html2pdf().from(clone).set(opt).save();
+
+      // 7️⃣ Clean up the temporary clone
+      document.body.removeChild(container);
+    });
+  }
+</script>
+{% endblock js %}
+
+
+
+
