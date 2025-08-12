@@ -58,7 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware'
+    
 ]
 
 CSRF_TRUSTED_ORIGINS = ['https://jivihire-b0bvbvh9aecpghbn.centralindia-01.azurewebsites.net']
@@ -92,7 +92,7 @@ if not DEBUG:
     }
 
 
-ROOT_URLCONF = 'recruit_management.urls'
+ROOT_URLCONF = 'interview.urls'
 
 TEMPLATES = [
     {
@@ -105,14 +105,14 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'notification.context_processor.base_template_context'
+                
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'recruit_management.wsgi.application'
-ASGI_APPLICATION = 'recruit_management.asgi.application'
+WSGI_APPLICATION = 'interview.wsgi.application'
+ASGI_APPLICATION = 'interview.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -187,8 +187,7 @@ USE_I18N = True
 USE_TZ = False
 
 
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+
 
 
 
@@ -248,10 +247,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # Default authentication
-    'allauth.account.auth_backends.AuthenticationBackend',  # For allauth
-]
+
 
 # microsoft credentials
 # SOCIALACCOUNT_PROVIDERS = {
