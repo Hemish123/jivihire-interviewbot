@@ -44,10 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # Required for allauth
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.microsoft',  # For Microsoft login
     "whitenoise.runserver_nostatic",
     "storages",
     'interviewbot',
