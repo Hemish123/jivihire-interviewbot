@@ -39,17 +39,6 @@ def exempt_zero(value):
             ('Please enter a value greater than 0'),
             params={'value': value},
         )
-
-
-class Company(models.Model):
-    name = models.CharField(max_length=255)
-    website = models.URLField(max_length=100, blank=True)
-    description = models.TextField(null=True, blank=True)
-    joined = models.DateTimeField(default=timezone.now)
-    created_by = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, related_name='company')
-
-    def __str__(self):
-        return self.name
     
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employee')  # Link to User model
