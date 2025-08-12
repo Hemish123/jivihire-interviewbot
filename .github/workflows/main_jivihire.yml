@@ -24,15 +24,18 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Install PortAudio dependencies
-        run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
-      - name: Create and start virtual environment
+      - name: Install system dependencies for PyAudio
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev
+
+      - name: Create and start virtual environment and install dependencies
         run: |
           python -m venv venv
           source venv/bin/activate
-      
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
 
         # Step 4: Download ZIP file from Azure Blob Storage
       - name: Download ZIP from Azure Blob Storage
