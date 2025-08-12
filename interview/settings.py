@@ -37,11 +37,6 @@ ALLOWED_HOSTS = ['20.192.170.8', '169.254.131.2', '169.254.131.3', 'jivihire-b0b
 
 INSTALLED_APPS = [
     'daphne',
-    'users.apps.UsersConfig',
-    'dashboard.apps.DashboardConfig',
-    'adminuser.apps.AdminuserConfig',
-    'manager.apps.ManagerConfig',
-    'candidate.apps.CandidateConfig',
     'rest_framework',
     'crispy_forms',
     "crispy_bootstrap4",
@@ -64,7 +59,6 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "storages",
     'interviewbot',
-    'frontend'
 ]
 
 MIDDLEWARE = [
