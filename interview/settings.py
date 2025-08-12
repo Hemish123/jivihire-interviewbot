@@ -37,20 +37,12 @@ ALLOWED_HOSTS = ['20.192.170.8', '169.254.131.2', '169.254.131.3', 'jivihire-b0b
 
 INSTALLED_APPS = [
     'daphne',
-    'rest_framework',
-    'crispy_forms',
-    "crispy_bootstrap4",
-    'screening.apps.ScreeningConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "verify_email.apps.VerifyEmailConfig",
-    "phonenumber_field",
-    "notification.apps.NotificationConfig",
-    "channels",
     'django.contrib.sites',  # Required for allauth
     'allauth',
     'allauth.account',

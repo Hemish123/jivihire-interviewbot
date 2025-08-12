@@ -5,16 +5,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User,AbstractUser
 
-class User(AbstractUser):
-    """
-    Users within the Django authentication system are represented by this
-    model.
-
-    Username and password are required. Other fields are optional.
-    """
-
-    class Meta(AbstractUser.Meta):
-        swappable = "AUTH_USER_MODEL"
 
 class Company(models.Model):
     name = models.CharField(max_length=255)
