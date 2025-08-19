@@ -7,8 +7,8 @@ from django.http import JsonResponse, HttpResponseBadRequest,HttpResponse
 from .models import InterviewAnswer,InterviewQuestion
 from .genai_resume import transcribe_audio,evaluate_answer,generate_interview_summary,generate_questions_from_skills,generate_combined_questions_for_skills
 from django.contrib import messages
-from .models import JobOpening
-from .models import Candidate,ResumeAnalysis
+from manager.models import JobOpening
+from candidate.models import Candidate,ResumeAnalysis
 # from .utils import transcribe_audio_file
 import tempfile
 import os

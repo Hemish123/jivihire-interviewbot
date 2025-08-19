@@ -47,6 +47,13 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "storages",
     'interviewbot',
+    'adminuser',
+    'candidate',
+    'dashboard',
+    'manager',
+    'notification',
+    'screening',
+    'users',
 ]
 
 MIDDLEWARE = [
