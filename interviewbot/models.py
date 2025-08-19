@@ -31,3 +31,60 @@ class InterviewQuestion(models.Model):
     is_selected = models.BooleanField(default=False)
     is_custom = models.BooleanField(default=False)  # <-- Track recruiter-created ones
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class OldJobOpening(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_jobopening'
+
+class OldCandidate(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_candidate'
+
+class OldCandidateJobOpening(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_candidate_job_openings'
+
+class OldClient(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_client'
+
+class OldCompany(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_company'
+
+class OldEmployee(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_employee'
+
+class OldAssignEmployee(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_jobopening_assignemployee'
+
+class OldAnalysis(models.Model):
+  class Meta:
+
+        app_label = 'interviewbot'
+
+        db_table = 'interviewbot_resumeanalysis'
