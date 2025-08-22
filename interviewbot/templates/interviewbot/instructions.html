@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Instructions</title>
+  <!-- Bootstrap CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Icons (Bootstrap Icons CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card {
+      border-radius: 15px;
+      background: #ffffff;
+    }
+    .card-title {
+      font-weight: bold;
+      color: #444;
+    }
+    .list-group-item {
+      background: #f9fafb;
+      border: none;
+      display: flex;
+      align-items: center;
+      font-size: 15px;
+    }
+    .list-group-item i {
+      color: #2575fc;
+      margin-right: 10px;
+      font-size: 18px;
+    }
+    .btn-custom {
+      background: linear-gradient(45deg, #2575fc, #6a11cb);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 40px;
+      font-size: 18px;
+      transition: 0.3s;
+    }
+    .btn-custom:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card shadow-lg p-4" style="max-width: 650px; width: 100%;">
+    <div class="card-body text-center">
+      <h2 class="card-title mb-3"><i class="bi bi-clipboard-check me-2"></i> Interview Instructions</h2>
+      <p class="mb-4 text-muted">
+        Please read the following instructions carefully before starting your interview:
+      </p>
+
+      <ul class="list-group text-start mb-4">
+        <li class="list-group-item"><i class="bi bi-wifi"></i> Make sure you have a stable internet connection.</li>
+        <li class="list-group-item"><i class="bi bi-camera-video"></i> Ensure your camera and microphone are working.</li>
+        <li class="list-group-item"><i class="bi bi-lightbulb"></i> Answer all questions to the best of your ability.</li>
+        <li class="list-group-item"><i class="bi bi-clock-history"></i> You’ll have <strong>3 minutes per question</strong>.</li>
+        <li class="list-group-item"><i class="bi bi-x-circle"></i> Don’t leave in between the interview.</li>
+      </ul>
+
+      <h5 class="text-success mb-4">🌟 All the Best for Your Interview! 🌟</h5>
+
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-custom text-white btn-lg">
+          Next <i class="bi bi-arrow-right-circle ms-2"></i>
+
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

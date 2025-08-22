@@ -85,6 +85,27 @@ from django.shortcuts import render, redirect
 #                 "done": True
 #             }, status=400)
 
+class InstructionPageView(View):
+    def get(self, request):
+        # Get job and candidate IDs from query params
+        job_opening_id = request.GET.get("job_opening")
+        candidate_id = request.GET.get("candidate")
+
+        # Store them in session so we don’t lose them
+        request.session["job_opening_id"] = job_opening_id
+        request.session["candidate_id"] = candidate_id
+
+        return render(request, "interviewbot/instructions.html")
+
+    def post(self, request):
+        # When candidate clicks "Next", redirect to interview page
+        job_opening_id = request.session.get("job_opening_id")
+        candidate_id = request.session.get("candidate_id")
+
+        return redirect(
+            f"/interviewbot/start/?job_opening={job_opening_id}&candidate={candidate_id}"
+        )
+
 class InterviewPageView(View):
     def get(self, request):
         # Get job opening ID and candidate ID from query parameters

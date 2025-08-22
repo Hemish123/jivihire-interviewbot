@@ -34,57 +34,73 @@ class InterviewQuestion(models.Model):
 
 
 class OldJobOpening(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_jobopening'
+        managed = True
 
 class OldCandidate(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_candidate'
+        managed = True
 
 class OldCandidateJobOpening(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_candidate_job_openings'
+        managed = True
 
 class OldClient(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_client'
+        managed = True
 
 class OldCompany(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_company'
+        managed = True
 
 class OldEmployee(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_employee'
+        managed = True
 
 class OldAssignEmployee(models.Model):
+  temp = models.IntegerField(null=True, blank=True)  # dummy field
   class Meta:
 
         app_label = 'interviewbot'
 
         db_table = 'interviewbot_jobopening_assignemployee'
+        managed = True
 
-class OldAnalysis(models.Model):
-  class Meta:
+# class OldAnalysis(models.Model):
+#   temp = models.IntegerField(null=True, blank=True)  # dummy field
+#   class Meta:
 
-        app_label = 'interviewbot'
+#         app_label = 'interviewbot'
 
-        db_table = 'interviewbot_resumeanalysis'
+#         db_table = 'interviewbot_resumeanalysis'
+#         managed = True

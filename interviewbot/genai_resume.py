@@ -5,13 +5,37 @@ import re
 import json, os
 
 
+#for production
+import subprocess
+import tempfile
+import os
+
+def convert_webm_to_wav(input_path):
+    output_path = input_path.replace(".webm", ".wav")
+    command = ["ffmpeg", "-i", input_path, "-ar", "16000", "-ac", "1", output_path, "-y"]
+    subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return output_path
+
 def transcribe_audio(audio_file_path):
     """
     Convert audio file to text using OpenAI's Whisper model
     """
-    client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+    # client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+    endpoint = os.getenv("ENDPOINT_URL", "https://jivihireopenai.openai.azure.com/")
+
+    # # # Initialize Azure OpenAI Service client with key-based authentication
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=os.environ['CHATGPT_API_KEY'],
+        api_version="2024-05-01-preview",
+    )
     
     try:
+        #for production
+        # ✅ Convert WebM -> WAV
+        if audio_file_path.endswith(".webm"):
+            audio_file_path = convert_webm_to_wav(audio_file_path)
+
         with open(audio_file_path, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(
                 model="whisper-1",  # Using Whisper model
@@ -21,11 +45,24 @@ def transcribe_audio(audio_file_path):
     except Exception as e:
         print(f"Error in audio transcription: {e}")
         return None
+    #for production
+    finally:
+        # Cleanup converted file
+        if audio_file_path.endswith(".wav") and os.path.exists(audio_file_path):
+            os.remove(audio_file_path)
 
 
-client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+
 
 def evaluate_answer(question: str, answer: str, required_skills: list) -> dict:
+    endpoint = os.getenv("ENDPOINT_URL", "https://jivihireopenai.openai.azure.com/")
+
+    # # # Initialize Azure OpenAI Service client with key-based authentication
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=os.environ['CHATGPT_API_KEY'],
+        api_version="2024-05-01-preview",
+    )
     """
     Sends the interview question and candidate answer to GPT,
     requesting:
@@ -177,6 +214,14 @@ Also provide an overall "technical_skills_score" based on depth and clarity of t
 #     return resp.choices[0].message.content.strip()
 
 def generate_interview_summary(candidate_name: str, questions: list, required_skills: list) -> str:
+    endpoint = os.getenv("ENDPOINT_URL", "https://jivihireopenai.openai.azure.com/")
+
+    # # # Initialize Azure OpenAI Service client with key-based authentication
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=os.environ['CHATGPT_API_KEY'],
+        api_version="2024-05-01-preview",
+    )
     """
     Generate a 5-bullet summary of the interview covering all aspects: performance, skills, and fit.
     """
@@ -228,7 +273,15 @@ def generate_questions_from_skills(skills):
     if not skills:
         return []
 
-    client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+    # client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+    endpoint = os.getenv("ENDPOINT_URL", "https://jivihireopenai.openai.azure.com/")
+
+    # # # Initialize Azure OpenAI Service client with key-based authentication
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=os.environ['CHATGPT_API_KEY'],
+        api_version="2024-05-01-preview",
+    )
     user_prompt = f"""Generate 5 interview questions based on these skills: {', '.join(skills)}.
     Return a JSON list: {{ "questions": ["q1", "q2", ...] }}"""
 
@@ -251,7 +304,15 @@ def generate_combined_questions_for_skills(designation, skill_levels, n=5):
     Generate exactly `n` interview questions for multiple skills combined.
     skill_levels: [{'skill': 'Python', 'level': 'fresher'}, ...]
     """
-    client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+    # client = OpenAI(api_key=os.environ['CHATGPT_API_KEY'])
+    endpoint = os.getenv("ENDPOINT_URL", "https://jivihireopenai.openai.azure.com/")
+
+    # # # Initialize Azure OpenAI Service client with key-based authentication
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=os.environ['CHATGPT_API_KEY'],
+        api_version="2024-05-01-preview",
+    )
 
     # ✅ Create descriptive list for prompt
     skills_desc = ", ".join([f"{s['skill']} ({s['level']} level)" for s in skill_levels])

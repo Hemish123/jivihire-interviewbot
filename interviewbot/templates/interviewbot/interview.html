@@ -164,19 +164,21 @@ function loadQuestion() {
     .then(res => res.json())
     .then(data => {
       if (data.done) {
-        // ✅ Interview completed
-        document.getElementById('question').innerText = "🎉 Interview Complete!";
-        document.getElementById('nextButton').style.display = "none";
+        // ✅ Stop everything
         stopInterview();
         clearInterval(timerInterval);
 
-        // ✅ Show restart button
-        const tryAgainBtn = document.createElement("button");
-        tryAgainBtn.innerText = "🔁 Try Again";
-        tryAgainBtn.className = "btn btn-warning";
-        tryAgainBtn.onclick = restartInterview;
-        tryAgainBtn.id = "tryAgainButton";
-        document.querySelector('.col-md-6.align-items-center').appendChild(tryAgainBtn);
+        // ✅ Hide left video section and right controls
+        document.querySelector('.col-md-6.text-center').style.display = "none";
+        document.querySelector('.col-md-6.align-items-center').innerHTML = `
+          <div class="card shadow text-center p-5">
+            <h2 class="text-success mb-3">🎉 Interview Complete!</h2>
+            <p class="fs-5">✅ Thank you for completing the interview.</p>
+            <button id="tryAgainButton" class="btn btn-warning mt-4" onclick="restartInterview()">
+              🔁 Try Again
+            </button>
+          </div>
+        `;
         return;
       }
 
@@ -194,6 +196,7 @@ function loadQuestion() {
       showCountdown(3, () => startInterview());
     });
 }
+
 
 /** ✅ Start recording video, audio, and speech recognition */
 function startInterview() {
@@ -352,10 +355,18 @@ function submitAnswer(answer, isAuto) {
   .then(response => response.json())
   .then(data => {
     if (data.done) {
-      document.getElementById('question').innerText = "🎉 Interview Complete!";
-      document.getElementById('nextButton').style.display = "none";
+      // ✅ Stop everything
       stopInterview();
       clearInterval(timerInterval);
+
+      // ✅ Hide left video section and right controls
+      document.querySelector('.col-md-6.text-center').style.display = "none";
+      document.querySelector('.col-md-6.align-items-center').innerHTML = `
+        <div class="card shadow text-center p-5">
+          <h2 class="text-success mb-3">🎉 Interview Complete!</h2>
+          <p class="fs-5">✅ Thank you for completing the interview.</p>
+        </div>
+      `;
     } else {
       loadQuestion();
     }
@@ -368,6 +379,7 @@ function submitAnswer(answer, isAuto) {
     document.getElementById('nextButton').disabled = false;
   });
 }
+
 
 /** ✅ Restart interview by resetting session */
 function restartInterview() {
