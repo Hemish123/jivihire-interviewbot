@@ -287,7 +287,7 @@ def generate_questions_from_skills(skills):
 
     try:
         resp = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful technical recruiter."},
                 {"role": "user", "content": user_prompt}
@@ -325,7 +325,7 @@ def generate_combined_questions_for_skills(designation, skill_levels, n=5):
 
     try:
         resp = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are an expert interviewer."},
                 {"role": "user", "content": user_prompt}
